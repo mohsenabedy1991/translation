@@ -3,6 +3,7 @@ package translation
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mohsenabedy1991/translation/configs"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
 	"os"
@@ -16,13 +17,18 @@ var (
 
 // Init initializes the localizer with the desired language.
 func init() {
+	config, err := configs.LoadConfig()
+	if err != nil {
+		return
+	}
+
 	bundle = i18n.NewBundle(language.English)
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 
-	root := os.Getenv("PATH_LOCALE")
+	root := config.PathLocale
 	createLocaleDirectory(root)
 
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println("Error:", err)
 			return err
@@ -30,7 +36,7 @@ func init() {
 
 		// Check if the current path is a JSON file
 		if !info.IsDir() && filepath.Ext(path) == ".json" {
-			if _, err := bundle.LoadMessageFile(path); err != nil {
+			if _, err = bundle.LoadMessageFile(path); err != nil {
 				fmt.Printf("Failed to load message file %s: %v\n", path, err)
 			}
 		}
@@ -50,9 +56,6 @@ type Translation struct{}
 type Translator interface {
 	GetLocalizer(lang string) *i18n.Localizer
 	Lang(key string, args map[string]interface{}) string
-	SetTranslationDirectory(path string)
-	SetFallbackLocale(locale string)
-	SetLocale(locale string)
 }
 
 func NewTranslation() *Translation {
@@ -61,8 +64,13 @@ func NewTranslation() *Translation {
 
 // GetLocalizer initializes the localizer with the desired language.
 func (t *Translation) GetLocalizer(lang string) *i18n.Localizer {
+	config, err := configs.LoadConfig()
+	if err != nil {
+		return nil
+	}
+
 	if lang == "" {
-		lang = os.Getenv("APP_LOCALE")
+		lang = config.Locale
 	}
 	tag, err := language.Parse(lang)
 	if err != nil {
@@ -82,55 +90,37 @@ func (t *Translation) Lang(key string, args map[string]interface{}, lang *string
 		TemplateData: args,
 	}
 
-	if *lang != "" {
+	if lang != nil {
 		AcceptLanguage = t.GetLocalizer(*lang)
 	}
 
 	message, err := AcceptLanguage.Localize(config)
 	if err != nil {
-		// If the message is not found, fall back to default language (configs.GetConfig().AppFallbackLocale))
-		defaultLang := i18n.NewLocalizer(bundle, os.Getenv("APP_FALLBACK_LOCALE"))
-		message = defaultLang.MustLocalize(config)
+		fallbackLang := os.Getenv("TRANSLATION_FALLBACK_LOCALE")
+		defaultLang := i18n.NewLocalizer(bundle, fallbackLang)
+		message, err = defaultLang.Localize(config)
+		if err != nil {
+			return key
+		}
 	}
 
 	return message
 }
 
-func (t *Translation) SetTranslationDirectory(path string) {
-	if path == "" {
-		path = "templates/translations/"
-	}
-	err := os.Setenv("PATH_LOCALE", path)
-	if err != nil {
-		return
-	}
-}
-
-func (t *Translation) SetFallbackLocale(locale string) {
-	if locale == "" {
-		locale = "en"
-	}
-	err := os.Setenv("APP_FALLBACK_LOCALE", locale)
-	if err != nil {
-		return
-	}
-}
-
-func (t *Translation) SetLocale(locale string) {
-	if locale == "" {
-		locale = "en"
-	}
-	err := os.Setenv("APP_LOCALE", locale)
-	if err != nil {
-		return
-	}
-}
-
 // createLocaleDirectory create locale directory in root project if not exists
 func createLocaleDirectory(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		err = os.MkdirAll(path, os.ModePerm)
+		if err != nil {
 			return
 		}
+	}
+	// if en.json not exists create it
+	if _, err := os.Stat(path + "/en.json"); !os.IsNotExist(err) {
+		return
+	}
+	_, err := os.Create(path + "/en.json")
+	if err != nil {
+		return
 	}
 }
