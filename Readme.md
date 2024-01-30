@@ -22,15 +22,7 @@ import (
 func main() {
 	// Create a new translation instance.
 	t := translation.NewTranslation()
-
-	// Set the translation directory.
-	t.SetTranslationDirectory("translations")
-
-	// Set the fallback locale.
-	t.SetFallbackLocale("en")
-
-	// Set the locale.
-	t.SetLocale("en")
+	t.GetLocalizer("el")
 
 	// Print the translated string.
 	fmt.Println(t.Lang("hello", nil, nil))

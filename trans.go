@@ -96,8 +96,7 @@ func (t *Translation) Lang(key string, args map[string]interface{}, lang *string
 
 	message, err := AcceptLanguage.Localize(config)
 	if err != nil {
-		fallbackLang := os.Getenv("TRANSLATION_FALLBACK_LOCALE")
-		defaultLang := i18n.NewLocalizer(bundle, fallbackLang)
+		defaultLang := i18n.NewLocalizer(bundle, os.Getenv("TRANSLATION_FALLBACK_LOCALE"))
 		message, err = defaultLang.Localize(config)
 		if err != nil {
 			return key

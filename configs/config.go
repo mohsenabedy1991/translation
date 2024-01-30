@@ -20,8 +20,21 @@ func LoadConfig() (*Config, error) {
 	}
 
 	return &Config{
-		Locale:         os.Getenv("TRANSLATION_LOCALE"),
-		FallbackLocale: os.Getenv("TRANSLATION_FALLBACK_LOCALE"),
-		PathLocale:     os.Getenv("TRANSLATION_PATH_LOCALE"),
+		Locale:         getEnv("TRANSLATION_LOCALE", "en"),
+		FallbackLocale: getEnv("TRANSLATION_FALLBACK_LOCALE", "en"),
+		PathLocale:     getEnv("TRANSLATION_PATH_LOCALE", "translation"),
 	}, nil
+}
+
+func getEnv(key string, fallback string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		err := os.Setenv(key, fallback)
+		if err != nil {
+			return ""
+		}
+		return fallback
+	}
+
+	return value
 }
