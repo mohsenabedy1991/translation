@@ -129,8 +129,7 @@ func (t *Translation) SetLocale(locale string) {
 // createLocaleDirectory create locale directory in root project if not exists
 func createLocaleDirectory(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err = os.Mkdir(path, 0755)
-		if err != nil {
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
 			return
 		}
 	}
