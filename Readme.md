@@ -9,6 +9,26 @@ This is a translation package that uses in your project to translate your text t
 $ go get github.com/mohsenabedy1991/translation
 ```
 
+
+## Set environment variables
+
+```bash
+export TRANSLATION_LOCALE=en
+export TRANSLATION_FALLBACK_LOCALE=en
+export TRANSLATION_PATH_LOCALE=translation
+```
+
+or you can copy to .env file
+    
+```
+TRANSLATION_LOCALE=en
+TRANSLATION_FALLBACK_LOCALE=en
+TRANSLATION_PATH_LOCALE=translation
+```
+
+
+you can change the name of the path locale to any name you want.
+
 ## Usage
 
 ```go
